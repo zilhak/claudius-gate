@@ -61,6 +61,9 @@ const MainContent = styled(Box)`
 `;
 
 function App() {
+  console.log('App component loaded');
+  console.log('window.electronAPI on load:', window.electronAPI);
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [imageSavePath, setImageSavePath] = useState('');
@@ -68,6 +71,7 @@ function App() {
   const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log('useEffect - window.electronAPI:', window.electronAPI);
     // Load settings
     if (window.electronAPI?.settingsGet) {
       window.electronAPI.settingsGet().then(settings => {
@@ -144,6 +148,9 @@ function App() {
     setMessages(prev => [...prev, newMessage]);
     
     // Send message to Claude
+    console.log('window.electronAPI:', window.electronAPI);
+    console.log('Available methods:', window.electronAPI ? Object.keys(window.electronAPI) : 'API not loaded');
+    
     if (!window.electronAPI?.claudeSendMessage) {
       console.error('Claude API not available');
       return;

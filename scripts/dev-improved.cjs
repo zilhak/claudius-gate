@@ -16,6 +16,12 @@ async function buildElectronFiles() {
     const preloadSrc = path.join(__dirname, '../src/preload/index.cjs');
     const preloadDest = path.join(__dirname, '../dist/preload/index.cjs');
     
+    // Copy additional cjs files
+    const claudeServiceSrc = path.join(__dirname, '../src/main/claudeService.cjs');
+    const claudeServiceDest = path.join(__dirname, '../dist/main/claudeService.cjs');
+    const settingsManagerSrc = path.join(__dirname, '../src/main/settingsManager.cjs');
+    const settingsManagerDest = path.join(__dirname, '../dist/main/settingsManager.cjs');
+    
     // Create directories
     fs.mkdirSync(path.dirname(mainDest), { recursive: true });
     fs.mkdirSync(path.dirname(preloadDest), { recursive: true });
@@ -23,6 +29,8 @@ async function buildElectronFiles() {
     // Copy files
     fs.copyFileSync(mainSrc, mainDest);
     fs.copyFileSync(preloadSrc, preloadDest);
+    fs.copyFileSync(claudeServiceSrc, claudeServiceDest);
+    fs.copyFileSync(settingsManagerSrc, settingsManagerDest);
     
     console.log('Electron files built and copied');
   } catch (error) {

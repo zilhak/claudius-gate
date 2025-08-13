@@ -1,10 +1,35 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import electron from 'vite-plugin-electron';
+import renderer from 'vite-plugin-electron-renderer';
 import path from 'path';
 
 export default defineConfig({
   plugins: [
-    react()
+    react(),
+    electron([
+      {
+        entry: 'src/main/index.cjs',
+        vite: {
+          build: {
+            outDir: 'dist/main',
+            lib: {
+              entry: 'src/main/index.cjs',
+              formats: ['cjs']
+            },
+            rollupOptions: {
+              external: ['electron', 'path', 'fs', 'child_process'],
+              output: {
+                entryFileNames: '[name].cjs'
+              }
+            },
+            copyPublicDir: false,
+            ssr: true
+          }
+        }
+      }
+    ]),
+    renderer()
   ],
   resolve: {
     alias: {
@@ -13,7 +38,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/renderer',
-    emptyOutDir: true
+    emptyOutDir: false
   },
   server: {
     port: 5173

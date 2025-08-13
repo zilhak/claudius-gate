@@ -1,54 +1,178 @@
 const { spawn } = require('child_process');
-const { createServer } = require('vite');
 const path = require('path');
+const fs = require('fs');
 
-const mode = process.env.NODE_ENV || 'development';
-
-async function startVite() {
-  const server = await createServer({
-    configFile: path.resolve(__dirname, '../vite.config.ts'),
-    mode
-  });
+// Check if we have necessary files
+function checkFiles() {
+  const mainFile = path.join(__dirname, '../src/main/index.cjs');
+  const preloadFile = path.join(__dirname, '../src/preload/index.ts');
   
-  await server.listen();
-  server.printUrls();
+  if (!fs.existsSync(mainFile)) {
+    console.error('Main file not found:', mainFile);
+    process.exit(1);
+  }
   
-  return server;
+  console.log('✓ Main file found');
+  console.log('✓ Preload file:', fs.existsSync(preloadFile) ? 'found' : 'not found (will use fallback)');
 }
 
-async function startElectron() {
+// Create preload file for development
+function createDevPreload() {
+  const preloadDir = path.join(__dirname, '../dist/preload');
+  const preloadFile = path.join(preloadDir, 'index.js');
+  
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(preloadDir)) {
+    fs.mkdirSync(preloadDir, { recursive: true });
+  }
+  
+  // Create a simple preload file that requires the TypeScript source
+  const preloadContent = `
+// Development preload wrapper
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  saveImageFromClipboard: (targetPath) => 
+    ipcRenderer.invoke('save-image-from-clipboard', targetPath),
+  getAppVersion: () => 
+    ipcRenderer.invoke('get-app-version'),
+  getPlatform: () => 
+    ipcRenderer.invoke('get-platform'),
+  
+  // Claude service methods
+  claudeInitialize: () => 
+    ipcRenderer.invoke('claude-initialize'),
+  claudeSendMessage: (message) => 
+    ipcRenderer.invoke('claude-send-message', message),
+  claudeStop: () => 
+    ipcRenderer.invoke('claude-stop'),
+  claudeStatus: () => 
+    ipcRenderer.invoke('claude-status'),
+  
+  // Claude event listeners
+  onClaudeMessage: (callback) => {
+    ipcRenderer.on('claude-message', (_, message) => callback(message));
+  },
+  onClaudeError: (callback) => {
+    ipcRenderer.on('claude-error', (_, error) => callback(error));
+  },
+  onClaudeReady: (callback) => {
+    ipcRenderer.on('claude-ready', () => callback());
+  },
+  
+  // Settings methods
+  settingsGet: () => 
+    ipcRenderer.invoke('settings-get'),
+  settingsSet: (settings) => 
+    ipcRenderer.invoke('settings-set', settings)
+});
+`;
+  
+  fs.writeFileSync(preloadFile, preloadContent);
+  console.log('✓ Development preload file created');
+}
+
+// Start Vite for renderer process
+function startVite() {
   return new Promise((resolve, reject) => {
-    const electronPath = require('electron');
-    const proc = spawn(electronPath, ['.'], {
-      stdio: 'inherit',
-      env: {
-        ...process.env,
-        NODE_ENV: 'development'
+    const vite = spawn('npx', ['vite', '--config', 'vite-simple.config.ts'], {
+      stdio: 'pipe',
+      shell: true,
+      cwd: path.resolve(__dirname, '..')
+    });
+    
+    let viteReady = false;
+    let viteUrl = 'http://localhost:5173';
+    
+    vite.stdout.on('data', (data) => {
+      const output = data.toString();
+      process.stdout.write(output);
+      
+      // Extract the actual URL from Vite output
+      const urlMatch = output.match(/http:\/\/localhost:(\d+)\//);
+      if (urlMatch) {
+        viteUrl = `http://localhost:${urlMatch[1]}`;
+      }
+      
+      if (!viteReady && output.includes('Local:')) {
+        viteReady = true;
+        console.log('\n✓ Vite server ready');
+        resolve({ process: vite, url: viteUrl });
       }
     });
     
-    proc.on('close', (code) => {
-      if (code !== 0) {
-        reject(new Error(`Electron exited with code ${code}`));
-      } else {
-        resolve();
+    vite.stderr.on('data', (data) => {
+      process.stderr.write(data);
+    });
+    
+    vite.on('error', reject);
+    vite.on('close', (code) => {
+      if (!viteReady) {
+        reject(new Error(`Vite exited with code ${code}`));
       }
     });
   });
 }
 
+// Start Electron
+function startElectron(viteUrl) {
+  const electronPath = require('electron');
+  
+  console.log('Starting Electron...');
+  console.log('Using Vite URL:', viteUrl);
+  
+  const electron = spawn(electronPath, ['src/main/index.cjs'], {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    cwd: path.resolve(__dirname, '..'),
+    env: {
+      ...process.env,
+      NODE_ENV: 'development',
+      VITE_DEV_SERVER_URL: viteUrl
+    }
+  });
+  
+  electron.on('close', (code) => {
+    console.log(`Electron closed with code ${code}`);
+    process.exit(code);
+  });
+  
+  return electron;
+}
+
+// Main function
 async function main() {
   try {
-    console.log('Starting Vite dev server...');
-    const server = await startVite();
+    console.log('Starting development server...\n');
     
-    console.log('Starting Electron...');
-    await startElectron();
+    // Check files
+    checkFiles();
     
-    server.close();
-    process.exit(0);
+    // Create development preload file
+    createDevPreload();
+    
+    // Start Vite
+    console.log('\nStarting Vite server...');
+    const viteResult = await startVite();
+    const viteProcess = viteResult.process;
+    const viteUrl = viteResult.url;
+    
+    // Wait a bit for Vite to stabilize
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Start Electron
+    const electronProcess = startElectron(viteUrl);
+    
+    // Handle cleanup on exit
+    process.on('SIGINT', () => {
+      console.log('\nShutting down...');
+      electronProcess.kill();
+      viteProcess.kill();
+      process.exit();
+    });
+    
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error starting dev server:', error);
     process.exit(1);
   }
 }
