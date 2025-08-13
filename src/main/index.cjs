@@ -47,16 +47,71 @@ function createWindow() {
 app.whenReady().then(async () => {
   createWindow();
   
-  // Initialize Claude service
+  // Initialize Claude service with context simulation
   try {
-    // Use print mode directly for now
-    const { ClaudeService } = require('./claudeService.cjs');
-    console.log('Using print-mode Claude service');
-    claudeService = new ClaudeService();
+    // Use final service with simulated context
+    const { ClaudeFinalService } = require('./claudeFinalService.cjs');
+    console.log('Using Claude Final Service with context simulation and permission bypass');
+    claudeService = new ClaudeFinalService();
     
+    // Set bypass permissions by default
+    claudeService.setBypassPermissions(true);
+    
+    // Initialize the service
+    await claudeService.initialize();
+    
+    // Forward all events to renderer
     claudeService.on('message', (message) => {
       if (mainWindow) {
         mainWindow.webContents.send('claude-message', message);
+      }
+    });
+    
+    claudeService.on('stream', (data) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-stream', data);
+      }
+    });
+    
+    claudeService.on('thinking', (data) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-thinking', data);
+      }
+    });
+    
+    claudeService.on('tool_use', (data) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-tool-use', data);
+      }
+    });
+    
+    claudeService.on('tool_result', (data) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-tool-result', data);
+      }
+    });
+    
+    claudeService.on('permission_request', (data) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-permission-request', data);
+      }
+    });
+    
+    claudeService.on('token_usage', (data) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-token-usage', data);
+      }
+    });
+    
+    claudeService.on('final_token_usage', (data) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-final-token-usage', data);
+      }
+    });
+    
+    claudeService.on('partial', (data) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-partial', data);
       }
     });
     
@@ -67,10 +122,29 @@ app.whenReady().then(async () => {
       }
     });
     
+    claudeService.on('permission_error', (data) => {
+      console.error('Claude permission error:', data);
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-permission-error', data);
+      }
+    });
+    
     claudeService.on('ready', () => {
       console.log('Claude service ready');
       if (mainWindow) {
         mainWindow.webContents.send('claude-ready');
+      }
+    });
+    
+    claudeService.on('done', () => {
+      if (mainWindow) {
+        mainWindow.webContents.send('claude-done');
+      }
+    });
+    
+    claudeService.on('debug', (data) => {
+      if (mainWindow && process.env.NODE_ENV === 'development') {
+        mainWindow.webContents.send('claude-debug', data);
       }
     });
   } catch (error) {
@@ -130,10 +204,13 @@ ipcMain.handle('get-platform', () => {
 ipcMain.handle('claude-initialize', async () => {
   try {
     if (!claudeService) {
-      const { ClaudeService } = require('./claudeService.cjs');
-      claudeService = new ClaudeService();
+      const { ClaudeFinalService } = require('./claudeFinalService.cjs');
+      claudeService = new ClaudeFinalService();
+      claudeService.setBypassPermissions(true);
     }
-    await claudeService.initialize();
+    if (!claudeService.isRunning()) {
+      await claudeService.initialize();
+    }
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
