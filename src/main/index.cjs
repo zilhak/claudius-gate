@@ -28,6 +28,8 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    // Open DevTools in production for debugging
+    mainWindow.webContents.openDevTools();
   }
 
   mainWindow.on('closed', () => {
@@ -218,6 +220,9 @@ ipcMain.handle('claude-initialize', async () => {
 });
 
 ipcMain.handle('claude-send-message', async (_, message) => {
+  console.log('📨 [IPC] Received: claude-send-message');
+  console.log('📝 [IPC] Message:', message);
+  
   try {
     if (!claudeService || !claudeService.isRunning()) {
       await claudeService?.initialize();
@@ -225,6 +230,7 @@ ipcMain.handle('claude-send-message', async (_, message) => {
     await claudeService?.sendMessage(message);
     return { success: true };
   } catch (error) {
+    console.error('❌ [IPC] Error sending message:', error);
     return { success: false, error: error.message };
   }
 });

@@ -94,6 +94,7 @@ const InputArea: React.FC<InputAreaProps> = ({
 }) => {
   const [input, setInput] = useState('');
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [isComposing, setIsComposing] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const adjustTextAreaHeight = () => {
@@ -116,10 +117,19 @@ const InputArea: React.FC<InputAreaProps> = ({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // IME 입력 중에는 엔터 키 처리하지 않음
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
   };
 
   const handlePaste = async (e: ClipboardEvent<HTMLTextAreaElement>) => {
@@ -188,6 +198,8 @@ const InputArea: React.FC<InputAreaProps> = ({
             adjustTextAreaHeight();
           }}
           onKeyDown={handleKeyDown}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
           onPaste={handlePaste}
           placeholder="Type a message... (Shift+Enter for new line)"
         />

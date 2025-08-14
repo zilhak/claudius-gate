@@ -27,6 +27,26 @@ export default defineConfig({
             ssr: true
           }
         }
+      },
+      {
+        entry: 'src/preload/index.ts',
+        vite: {
+          build: {
+            outDir: 'dist/preload',
+            lib: {
+              entry: 'src/preload/index.ts',
+              formats: ['cjs']
+            },
+            rollupOptions: {
+              external: ['electron'],
+              output: {
+                entryFileNames: '[name].js'
+              }
+            },
+            copyPublicDir: false,
+            ssr: true
+          }
+        }
       }
     ]),
     renderer()

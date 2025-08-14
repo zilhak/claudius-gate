@@ -8,5 +8,17 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/renderer/main.tsx"></script>
+    <script>
+      // Prevent default drag and drop behavior
+      document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      
+      document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    </script>
   </body>
 </html>

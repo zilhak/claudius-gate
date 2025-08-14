@@ -97,6 +97,13 @@ function App() {
     // Set up Claude event listeners
     if (window.electronAPI?.onClaudeMessage) {
       window.electronAPI.onClaudeMessage((message) => {
+      console.log('🟢 [FRONTEND] Received message from Claude:', message);
+      console.log('📊 [FRONTEND] Response details:', {
+        content: message.content?.substring(0, 100) + '...',
+        role: message.role,
+        timestamp: message.timestamp
+      });
+      
       const claudeMessage: Message = {
         id: Date.now().toString(),
         content: message.content,
@@ -144,6 +151,15 @@ function App() {
       timestamp: new Date(),
       images
     };
+    
+    // Log communication for debugging
+    console.log('🔵 [FRONTEND] Sending message to Claude:', content);
+    console.log('📊 [FRONTEND] Message details:', {
+      content: content.substring(0, 100) + '...',
+      hasImages: !!images,
+      imageCount: images?.length || 0,
+      timestamp: new Date().toISOString()
+    });
     
     setMessages(prev => [...prev, newMessage]);
     

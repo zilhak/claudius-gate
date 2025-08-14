@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, Typography, LinearProgress, Chip, List, ListItem, ListItemIcon, ListItemText, Alert, Accordion, AccordionSummary, AccordionDetails, IconButton, Tooltip } from '@mui/material';
+import { Box, Paper, Typography, LinearProgress, Chip, List, ListItem, ListItemIcon, ListItemText, Alert, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
   Psychology as ThinkingIcon,
@@ -7,30 +7,27 @@ import {
   Token as TokenIcon,
   Security as PermissionIcon,
   ExpandMore as ExpandMoreIcon,
-  CheckCircle as ApprovedIcon,
   Warning as WarningIcon,
   Info as InfoIcon,
-  Code as CodeIcon,
-  Terminal as TerminalIcon,
   Speed as SpeedIcon
 } from '@mui/icons-material';
 
-const StatusContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
+const StatusContainer = styled(Paper)(() => ({
+  padding: 16,
   backgroundColor: '#1e1e1e',
   borderRadius: 8,
-  marginBottom: theme.spacing(2),
+  marginBottom: 16,
   border: '1px solid #333',
 }));
 
-const StatusSection = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
+const StatusSection = styled(Box)(() => ({
+  marginBottom: 16,
   '&:last-child': {
     marginBottom: 0,
   },
 }));
 
-const TokenBar = styled(LinearProgress)(({ theme }) => ({
+const TokenBar = styled(LinearProgress)(() => ({
   height: 8,
   borderRadius: 4,
   backgroundColor: '#333',
@@ -39,19 +36,19 @@ const TokenBar = styled(LinearProgress)(({ theme }) => ({
   },
 }));
 
-const ActivityItem = styled(ListItem)(({ theme }) => ({
-  padding: theme.spacing(0.5, 1),
+const ActivityItem = styled(ListItem)(() => ({
+  padding: '4px 8px',
   borderRadius: 4,
-  marginBottom: theme.spacing(0.5),
+  marginBottom: 4,
   backgroundColor: '#2a2a2a',
   '&:hover': {
     backgroundColor: '#333',
   },
 }));
 
-const StyledAccordion = styled(Accordion)(({ theme }) => ({
+const StyledAccordion = styled(Accordion)(() => ({
   backgroundColor: '#2a2a2a',
-  marginBottom: theme.spacing(1),
+  marginBottom: 8,
   '&:before': {
     display: 'none',
   },
@@ -76,21 +73,19 @@ interface ClaudeStatusProps {
 }
 
 const ClaudeStatus: React.FC<ClaudeStatusProps> = ({ 
-  sessionId,
-  bypassPermissions = true,
-  onPermissionRequest 
+  bypassPermissions = true
 }) => {
-  const [isThinking, setIsThinking] = useState(false);
-  const [currentActivity, setCurrentActivity] = useState<string>('');
-  const [activities, setActivities] = useState<ClaudeActivity[]>([]);
-  const [tokenUsage, setTokenUsage] = useState({
+  const [isThinking, _setIsThinking] = useState(false);
+  const [_currentActivity, _setCurrentActivity] = useState<string>('');
+  const [activities] = useState<ClaudeActivity[]>([]);
+  const [tokenUsage] = useState({
     input: 0,
     output: 0,
     total: 0,
     limit: 100000,
     cost: 0
   });
-  const [streamData, setStreamData] = useState<any>(null);
+  const [streamData, _setStreamData] = useState<any>(null);
   const [expandedSections, setExpandedSections] = useState({
     thinking: true,
     tools: true,
@@ -100,153 +95,67 @@ const ClaudeStatus: React.FC<ClaudeStatusProps> = ({
   useEffect(() => {
     // IPC 리스너 설정
     if (window.electronAPI) {
-      window.electronAPI.onClaudeStream((data: any) => {
-        handleStreamData(data);
-      });
-
-      window.electronAPI.onClaudeStatus((status: any) => {
-        handleStatusUpdate(status);
-      });
+      // Stream and status listeners will be added when APIs are available
+      // window.electronAPI.onClaudeStream((data: any) => {
+      //   handleStreamData(data);
+      // });
+      // window.electronAPI.onClaudeStatus((status: any) => {
+      //   handleStatusUpdate(status);
+      // });
     }
 
     return () => {
       // Cleanup
-      if (window.electronAPI) {
-        window.electronAPI.removeClaudeListeners();
-      }
+      // Cleanup will be added when API is available
+      // if (window.electronAPI) {
+      //   window.electronAPI.removeClaudeListeners();
+      // }
     };
   }, []);
 
-  const handleStreamData = (data: any) => {
-    // Stream JSON 파싱
-    try {
-      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-      setStreamData(parsed);
+  // Stream data handler - will be used when API is available
+  // const _handleStreamData = (data: any) => {
+  //   // Stream JSON parsing logic
+  // };
 
-      // 타입별 처리
-      switch (parsed.type) {
-        case 'thinking':
-          setIsThinking(true);
-          setCurrentActivity('Claude is thinking...');
-          addActivity({
-            type: 'thinking',
-            content: parsed.content || 'Processing...',
-            timestamp: new Date(),
-            details: parsed
-          });
-          break;
+  // Status update handler - will be used when API is available
+  // const _handleStatusUpdate = (status: any) => {
+  //   // Status update logic
+  // };
 
-        case 'tool_use':
-          addActivity({
-            type: 'tool_use',
-            content: `Using tool: ${parsed.tool_name}`,
-            timestamp: new Date(),
-            toolName: parsed.tool_name,
-            details: parsed.parameters,
-            status: 'pending'
-          });
-          break;
+  // Permission request handler - will be used when API is available
+  // const _handlePermissionRequest = (request: any) => {
+  //   // Permission handling logic
+  // };
 
-        case 'tool_result':
-          updateLastToolActivity('completed');
-          break;
+  // Permission approval - will be used when API is available
+  // const approvePermission = (request: any) => {
+  //   // Permission approval logic
+  // };
 
-        case 'permission_request':
-          handlePermissionRequest(parsed);
-          break;
+  // Activity adder - will be used when API is available
+  // const addActivity = (activity: ClaudeActivity) => {
+  //   setActivities(prev => [activity, ...prev].slice(0, 50)); // Maximum 50 items
+  // };
 
-        case 'token_usage':
-          updateTokenUsage(parsed);
-          break;
+  // Tool activity updater - will be used when API is available
+  // const _updateLastToolActivity = (status: 'completed' | 'error') => {
+  //   // Tool activity update logic
+  // };
 
-        case 'message':
-          setIsThinking(false);
-          setCurrentActivity('');
-          break;
+  // Activity status updater - will be used when API is available
+  // const updateActivityStatus = (id: string, status: string) => {
+  //   setActivities(prev => prev.map(activity => 
+  //     activity.details?.id === id 
+  //       ? { ...activity, status: status as any }
+  //       : activity
+  //   ));
+  // };
 
-        case 'error':
-          addActivity({
-            type: 'error',
-            content: parsed.message || 'An error occurred',
-            timestamp: new Date(),
-            details: parsed
-          });
-          break;
-      }
-    } catch (error) {
-      console.error('Failed to parse stream data:', error);
-    }
-  };
-
-  const handleStatusUpdate = (status: any) => {
-    if (status.tokens) {
-      setTokenUsage(prev => ({
-        ...prev,
-        ...status.tokens
-      }));
-    }
-  };
-
-  const handlePermissionRequest = (request: any) => {
-    const activity: ClaudeActivity = {
-      type: 'permission',
-      content: `Permission requested: ${request.permission}`,
-      timestamp: new Date(),
-      details: request,
-      status: bypassPermissions ? 'approved' : 'pending'
-    };
-
-    addActivity(activity);
-
-    if (bypassPermissions) {
-      // 자동 승인
-      setTimeout(() => {
-        approvePermission(request);
-      }, 100);
-    } else if (onPermissionRequest) {
-      onPermissionRequest(request);
-    }
-  };
-
-  const approvePermission = (request: any) => {
-    if (window.electronAPI) {
-      window.electronAPI.approvePermission(request.id);
-    }
-    updateActivityStatus(request.id, 'approved');
-  };
-
-  const addActivity = (activity: ClaudeActivity) => {
-    setActivities(prev => [activity, ...prev].slice(0, 50)); // 최대 50개 유지
-  };
-
-  const updateLastToolActivity = (status: 'completed' | 'error') => {
-    setActivities(prev => {
-      const updated = [...prev];
-      const lastToolIndex = updated.findIndex(a => a.type === 'tool_use' && a.status === 'pending');
-      if (lastToolIndex !== -1) {
-        updated[lastToolIndex].status = status;
-      }
-      return updated;
-    });
-  };
-
-  const updateActivityStatus = (id: string, status: string) => {
-    setActivities(prev => prev.map(activity => 
-      activity.details?.id === id 
-        ? { ...activity, status: status as any }
-        : activity
-    ));
-  };
-
-  const updateTokenUsage = (usage: any) => {
-    setTokenUsage(prev => ({
-      input: usage.input_tokens || prev.input,
-      output: usage.output_tokens || prev.output,
-      total: (usage.input_tokens || 0) + (usage.output_tokens || 0),
-      limit: usage.limit || prev.limit,
-      cost: usage.cost || prev.cost
-    }));
-  };
+  // Token usage updater - will be used when API is available
+  // const _updateTokenUsage = (usage: any) => {
+  //   // Token usage update logic
+  // };
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -262,7 +171,7 @@ const ClaudeStatus: React.FC<ClaudeStatusProps> = ({
     return timestamp.toLocaleTimeString();
   };
 
-  const toggleSection = (section: string) => {
+  const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
@@ -277,7 +186,7 @@ const ClaudeStatus: React.FC<ClaudeStatusProps> = ({
           <Box display="flex" alignItems="center" gap={1}>
             <ThinkingIcon color="primary" />
             <Typography variant="body2" color="primary">
-              {currentActivity}
+              {_currentActivity}
             </Typography>
             <Box flexGrow={1}>
               <LinearProgress variant="indeterminate" sx={{ height: 2 }} />

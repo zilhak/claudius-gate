@@ -62,7 +62,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 }) => {
   const [imageSavePath, setImageSavePath] = useState(initialPath);
   const [error, setError] = useState('');
-  const [platform, setPlatform] = useState<string>('');
+  const [platform] = useState<string>('');
 
   useEffect(() => {
     setImageSavePath(initialPath);

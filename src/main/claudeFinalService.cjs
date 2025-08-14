@@ -31,6 +31,9 @@ class ClaudeFinalService extends EventEmitter {
     }
 
     try {
+      // Log communication for debugging
+      console.log('🔵 [CLAUDE-COMM] Sending message:', message);
+      
       // Build context-aware message
       let fullMessage = message;
       
@@ -75,7 +78,8 @@ class ClaudeFinalService extends EventEmitter {
         args.push('--dangerously-skip-permissions');
       }
       
-      console.log('Running Claude with context-aware message');
+      console.log('🚀 [CLAUDE-COMM] Executing command:', `${claudeCmd} ${args.join(' ')}`);
+      console.log('📝 [CLAUDE-COMM] Full message being sent:', fullMessage);
       
       this.currentProcess = spawn(claudeCmd, args, {
         shell: true,
@@ -91,6 +95,8 @@ class ClaudeFinalService extends EventEmitter {
       this.currentProcess.stdout.on('data', (data) => {
         const chunk = data.toString();
         responseBuffer += chunk;
+        
+        console.log('🟢 [CLAUDE-COMM] Received chunk:', chunk.substring(0, 100) + '...');
         
         // Emit partial response
         this.emit('partial', {
