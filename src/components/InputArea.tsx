@@ -1,8 +1,13 @@
-import React, { useState, useRef, KeyboardEvent, ClipboardEvent } from 'react';
+import React, { useState, useRef, KeyboardEvent, ClipboardEvent, useEffect } from 'react';
 import { Box, IconButton } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import styled from 'styled-components';
+import CommandSuggestions, { Command } from './CommandSuggestions';
+
+const InputWrapper = styled.div`
+  position: relative;
+`;
 
 const InputContainer = styled(Box)`
   display: flex;
@@ -95,6 +100,10 @@ const InputArea: React.FC<InputAreaProps> = ({
   const [input, setInput] = useState('');
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
   const [isComposing, setIsComposing] = useState(false);
+  // Command suggestions removed (SuperClaude cleanup)
+  const [showSuggestions] = useState(false);
+  const [filteredCommands] = useState<Command[]>([]);
+  const [selectedSuggestionIndex] = useState(0);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const adjustTextAreaHeight = () => {
@@ -104,6 +113,8 @@ const InputArea: React.FC<InputAreaProps> = ({
       textArea.style.height = `${Math.min(textArea.scrollHeight, 200)}px`;
     }
   };
+
+  // Command suggestions functionality removed (SuperClaude cleanup)
 
   const handleSend = () => {
     if (input.trim() || attachedImages.length > 0) {
@@ -122,6 +133,12 @@ const InputArea: React.FC<InputAreaProps> = ({
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const selectCommand = (command: string) => {
+    // Removed - SuperClaude cleanup
+    setInput(command + ' ');
+    textAreaRef.current?.focus();
   };
 
   const handleCompositionStart = () => {
@@ -178,7 +195,7 @@ const InputArea: React.FC<InputAreaProps> = ({
   };
 
   return (
-    <Box>
+    <InputWrapper>
       {attachedImages.length > 0 && (
         <ImagePreviewContainer style={{ padding: '8px 16px 0' }}>
           {attachedImages.map((image, index) => (
@@ -189,6 +206,12 @@ const InputArea: React.FC<InputAreaProps> = ({
           ))}
         </ImagePreviewContainer>
       )}
+      <CommandSuggestions
+        commands={filteredCommands}
+        selectedIndex={selectedSuggestionIndex}
+        onSelect={selectCommand}
+        visible={showSuggestions}
+      />
       <InputContainer>
         <TextArea
           ref={textAreaRef}
@@ -221,7 +244,7 @@ const InputArea: React.FC<InputAreaProps> = ({
           <SendIcon />
         </IconButton>
       </InputContainer>
-    </Box>
+    </InputWrapper>
   );
 };
 
